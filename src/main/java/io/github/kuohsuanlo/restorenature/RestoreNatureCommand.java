@@ -102,10 +102,12 @@ public class RestoreNatureCommand implements CommandExecutor {
 
                                 for (int i = 0; i < rplugin.maintain_world_chunk_info.size(); i++) {
                                     if (player_world_name.equals(rplugin.maintain_world_chunk_info.get(i).world_name)) {
-                                        if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i)))
-                                            continue;
-
                                         MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
+                                        if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i))) {
+                                            sender.sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + RestoreNaturePlugin.OUT_OF_BOUND + chunksInfo.chunk_radius * 16);
+                                            continue;
+                                        }
+
                                         int x = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getX());
                                         int z = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getZ());
 
@@ -143,10 +145,12 @@ public class RestoreNatureCommand implements CommandExecutor {
 
                                 for (int i = 0; i < rplugin.maintain_world_chunk_info.size(); i++) {
                                     if (player_world_name.equals(rplugin.maintain_world_chunk_info.get(i).world_name)) {
-                                        if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i)))
-                                            continue;
-
                                         MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
+                                        if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i))) {
+                                            sender.sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + RestoreNaturePlugin.OUT_OF_BOUND + chunksInfo.chunk_radius * 16);
+                                            continue;
+                                        }
+
                                         int x = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getX());
                                         int z = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getZ());
 
