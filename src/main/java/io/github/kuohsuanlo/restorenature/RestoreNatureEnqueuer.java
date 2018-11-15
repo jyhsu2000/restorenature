@@ -1,8 +1,5 @@
 package io.github.kuohsuanlo.restorenature;
 
-import com.massivecraft.factions.entity.BoardColl;
-import com.massivecraft.factions.entity.Faction;
-import com.massivecraft.massivecore.ps.PS;
 import io.github.kuohsuanlo.restorenature.util.Lag;
 import io.github.kuohsuanlo.restorenature.util.RestoreNatureUtil;
 import me.ryanhamshire.GriefPrevention.Claim;
@@ -20,8 +17,6 @@ class RestoreNatureEnqueuer implements Runnable {
     private RestoreNaturePlugin rsplugin;
 
     public ArrayList<MapChunkInfo> maintained_worlds = new ArrayList<MapChunkInfo>();
-
-    private Faction faction = null;
 
     private GriefPrevention gp;
     private final String notClaimedOwner = "administrator";
@@ -215,7 +210,7 @@ class RestoreNatureEnqueuer implements Runnable {
 
 
         if (RestoreNaturePlugin.USING_FEATURE_FACTION) {
-            faction = BoardColl.get().getFactionAt(PS.valueOf(location));
+//            faction = BoardColl.get().getFactionAt(PS.valueOf(location));
         }
 
         if (RestoreNaturePlugin.USING_FEATURE_GRIEFPREVENTION) {
@@ -230,43 +225,41 @@ class RestoreNatureEnqueuer implements Runnable {
                     fc_claimed = false;
                 } else {
                     for (int j = 0; j < maintained_worlds.get(i).factions_name.size(); j++) {
-                        if (faction == null) {
-                            fc_claimed = false;
-                        } else if (faction.getName().equals(maintained_worlds.get(i).factions_name.get(j))) {
-                            fc_claimed = false;
-
-                        }
-
-                        if (gp == null) {
-                            gp_claimed = false;
-                        } else {
-                            boolean isOthersLand = false;
-                            for (int x = -8; x < 8; x++) {
-                                for (int z = -8; z < 8; z++) {
-                                    Claim claim = gp.dataStore.getClaimAt(
-                                            location.clone().add(x, 0, z), true, null
-                                    );
-
-                                    //no one's land
-                                    if (claim == null) {
-
-                                    }
-                                    //someone's land
-                                    else {
-                                        //System.out.println(claim.getOwnerName());
-                                        isOthersLand = isOthersLand || (!claim.getOwnerName().equals(notClaimedOwner));
-
-                                    }
-
-                                    if (isOthersLand) break;
-                                }
-                                if (isOthersLand) break;
-                            }
-                            gp_claimed = isOthersLand;
-                            //System.out.println(gp_claimed);
-                        }
-
+                        fc_claimed = false;
+//                        if (faction == null) {
+//                            fc_claimed = false;
+//                        } else if (faction.getName().equals(maintained_worlds.get(i).factions_name.get(j))) {
+//                            fc_claimed = false;
+//                        }
                     }
+                }
+                if (gp == null) {
+                    gp_claimed = false;
+                } else {
+                    boolean isOthersLand = false;
+                    for (int x = -8; x < 8; x++) {
+                        for (int z = -8; z < 8; z++) {
+                            Claim claim = gp.dataStore.getClaimAt(
+                                    location.clone().add(x, 0, z), true, null
+                            );
+
+                            //no one's land
+                            if (claim == null) {
+
+                            }
+                            //someone's land
+                            else {
+                                //System.out.println(claim.getOwnerName());
+                                isOthersLand = isOthersLand || (!claim.getOwnerName().equals(notClaimedOwner));
+
+                            }
+
+                            if (isOthersLand) break;
+                        }
+                        if (isOthersLand) break;
+                    }
+                    gp_claimed = isOthersLand;
+                    //System.out.println(gp_claimed);
                 }
             }
         }
