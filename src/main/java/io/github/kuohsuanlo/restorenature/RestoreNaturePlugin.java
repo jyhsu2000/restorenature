@@ -17,18 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 
-class Maintained_World {
-    public String world_name = "";
-    public ArrayList<String> nature_factions;
-    public int chunk_radius;
-
-    public Maintained_World(String name, ArrayList<String> factions, int radius) {
-        world_name = name;
-        nature_factions = factions;
-        chunk_radius = radius;
-    }
-}
-
 public class RestoreNaturePlugin extends JavaPlugin {
 
 
@@ -54,7 +42,7 @@ public class RestoreNaturePlugin extends JavaPlugin {
     public static String OUT_OF_BOUND = "This chunk is not in maintained radius : ";
 
 
-    public ArrayList<Maintained_World> config_maintain_worlds = new ArrayList<Maintained_World>();
+    public ArrayList<MaintainedWorld> config_maintain_worlds = new ArrayList<MaintainedWorld>();
     public ArrayList<MapChunkInfo> maintain_world_chunk_info = new ArrayList<MapChunkInfo>();
     public RestoreNatureEnqueuer ChunkUpdater;
     public RestoreNatureDequeuer ChunkTimeTicker;
@@ -173,7 +161,7 @@ public class RestoreNaturePlugin extends JavaPlugin {
             }
             String world_name = world.get("world_name") + "";
             String radius = world.get("check_radius") + "";
-            config_maintain_worlds.add(new Maintained_World(world_name, n_factions, Integer.valueOf(radius)));
+            config_maintain_worlds.add(new MaintainedWorld(world_name, n_factions, Integer.valueOf(radius)));
         }
 
 
