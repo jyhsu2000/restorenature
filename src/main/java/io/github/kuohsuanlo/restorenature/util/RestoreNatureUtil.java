@@ -17,7 +17,7 @@ public class RestoreNatureUtil {
     private static void restoreChunkBlock(Chunk restoring_chunk, Chunk restored_chunk, int x, int y, int z) {
         Block restoringBlock = restoring_chunk.getBlock(x, y, z);
         Block restoredBlock = restored_chunk.getBlock(x, y, z);
-        restoredBlock.setType(restoringBlock.getType());
+        restoredBlock.setType(restoringBlock.getType(), false);
         restoredBlock.setBlockData(restoringBlock.getBlockData(), false);
 
     }
