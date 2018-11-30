@@ -1,6 +1,7 @@
 name: RestoreNature
 main: io.github.kuohsuanlo.restorenature.RestoreNaturePlugin
 version: ${version}
+api-version: 1.13
 commands:
   restorenature:
     description: .
