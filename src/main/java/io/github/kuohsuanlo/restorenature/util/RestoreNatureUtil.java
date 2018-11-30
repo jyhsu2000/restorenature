@@ -53,6 +53,7 @@ public class RestoreNatureUtil {
             int itemNum = restoring_chest.getBlockInventory().getSize();
             Material mtmp;
             int ntmp;
+            restored_chest.getInventory().clear();
             for (int i = 0; i < itemNum; i++) {
                 if (restoring_chest.getBlockInventory().getItem(i) == null) {
                     //RestoreNaturePlugin.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+RestoreNaturePlugin.PLUGIN_PREFIX+"null "+i);
