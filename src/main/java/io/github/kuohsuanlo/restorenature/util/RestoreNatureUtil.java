@@ -18,7 +18,7 @@ public class RestoreNatureUtil {
         Block restoringBlock = restoring_chunk.getBlock(x, y, z);
         Block restoredBlock = restored_chunk.getBlock(x, y, z);
         restoredBlock.setType(restoringBlock.getType());
-        restoredBlock.setBlockData(restoringBlock.getBlockData());
+        restoredBlock.setBlockData(restoringBlock.getBlockData(), false);
 
     }
 
@@ -63,7 +63,7 @@ public class RestoreNatureUtil {
                 }
 
             }
-            restored_chest.update();
+//            restored_chest.update();
         }
     }
 
