@@ -94,6 +94,9 @@ public class RestoreNatureDequeuer implements Runnable {
     private void processFullRequest() {
         if (FullRestoreQueue.size() > 0) {
             Location location = FullRestoreQueue.poll();
+            if (location == null) {
+                return;
+            }
             Chunk restored = location.getChunk();
             Chunk natrue = rnplugin.getServer().getWorld(restored.getWorld().getName() + RestoreNaturePlugin.WORLD_SUFFIX).getChunkAt(restored.getX(), restored.getZ());
             RestoreNatureUtil.restoreChunk(restored, natrue, rnplugin.getMapChunkInfoFromWorldName(restored.getWorld().getName()), RestoreNatureUtil.convertChunkIdxToArrayIdx(restored.getX()), RestoreNatureUtil.convertChunkIdxToArrayIdx(restored.getZ()));
@@ -107,6 +110,9 @@ public class RestoreNatureDequeuer implements Runnable {
     private void processEntityRequest() {
         if (EntityRestoreQueue.size() > 0) {
             Location location = EntityRestoreQueue.poll();
+            if (location == null) {
+                return;
+            }
             Chunk restored = location.getChunk();
             Chunk restoring = rnplugin.getServer().getWorld(restored.getWorld().getName() + RestoreNaturePlugin.WORLD_SUFFIX).getChunkAt(restored.getX(), restored.getZ());
 
