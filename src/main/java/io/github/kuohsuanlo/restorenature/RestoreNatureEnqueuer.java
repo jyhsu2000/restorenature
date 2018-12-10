@@ -132,7 +132,8 @@ class RestoreNatureEnqueuer implements Runnable {
                                 "Entity Enq/Deq: " +
                                 currentEntityRequested + "/" + lastEntityChunkRestored + " | " +
                                 "Entity respawned: " + lastEntityRespawn + " | " +
-                                "Block removed: " + lastBannedBlockRemoved
+                                "FullRestoreQueue: " + rsplugin.ChunkTimeTicker.FullRestoreQueue.size()
+//                                "Block removed: " + lastBannedBlockRemoved
                 );
 
                 rsplugin.ChunkTimeTicker.lastFullChunkRestored = 0;
