@@ -11,9 +11,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 
 public class RestoreNatureUtil {
-    public static int ENTITY_CAL_RADIUS = 1;
-    public static int ENTITY_CAL_LIMIT = 8;
-
     private static void restoreChunkBlock(Chunk restoring_chunk, Chunk restored_chunk, int x, int y, int z) {
         Block restoringBlock = restoring_chunk.getBlock(x, y, z);
         Block restoredBlock = restored_chunk.getBlock(x, y, z);
@@ -53,7 +50,6 @@ public class RestoreNatureUtil {
             int itemNum = restoring_chest.getBlockInventory().getSize();
             Material mtmp;
             int ntmp;
-            restored_chest.getInventory().clear();
             for (int i = 0; i < itemNum; i++) {
                 if (restoring_chest.getBlockInventory().getItem(i) == null) {
                     //RestoreNaturePlugin.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW+RestoreNaturePlugin.PLUGIN_PREFIX+"null "+i);
@@ -64,7 +60,7 @@ public class RestoreNatureUtil {
                 }
 
             }
-//            restored_chest.update();
+            restored_chest.update();
         }
     }
 
@@ -79,7 +75,7 @@ public class RestoreNatureUtil {
 
                 for (int e = 0; e < entitiesRestored.length; e++) {
                     int entityTypeID = convertEntityTypeToIdx(entitiesRestored[e].getType());
-                    if (entityTypeID >= 0 && entityNum[entityTypeID] < ENTITY_CAL_LIMIT) {
+                    if (entityTypeID >= 0) {
                         entityNum[entityTypeID]++;
                     }
                 }
@@ -93,6 +89,146 @@ public class RestoreNatureUtil {
             if (EntityType.values()[i].equals(et)) return i;
         }
         return -1;
+    }
+
+    private static Location getCorrespondingLocation(World world, Location eLoc) {
+        return new Location(world, eLoc.getX(), eLoc.getY(), eLoc.getZ());
+    }
+
+    public static int restoreChunkEntity(Chunk restored_chunk, Chunk restoring_chunk) {
+        if (!restoring_chunk.isLoaded()) restoring_chunk.load();
+        if (!restored_chunk.isLoaded()) restored_chunk.load();
+
+        int restoredEntityNumbers = 0;
+        int[] entityNum_restored;
+        int[] entityNum_restoring;
+
+        entityNum_restored = calculateChunkEntityTypesNumber(restored_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+        entityNum_restoring = calculateChunkEntityTypesNumber(restoring_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+
+        for (int i = 0; i < entityNum_restoring.length; i++) {
+            if (entityNum_restoring[i] > RestoreNaturePlugin.ENTITY_CAL_LIMIT) {
+                entityNum_restoring[i] = RestoreNaturePlugin.ENTITY_CAL_LIMIT;
+            }
+        }
+
+        //removing excessive mobs on restored chunk
+        entityNum_restored = calculateChunkEntityTypesNumber(restored_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+        entityNum_restoring = calculateChunkEntityTypesNumber(restoring_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+
+        Entity[] entitiesRestored = restored_chunk.getEntities();
+        for (int e = 0; e < entitiesRestored.length; e++) {
+            Entity currentEntity = entitiesRestored[e];
+            //System.out.println(currentEntity.getType().name());
+            if (isValidRestoredEntityType(currentEntity.getType())) {
+                int entityTypeID = convertEntityTypeToIdx(entitiesRestored[e].getType());
+                if (entityNum_restored[entityTypeID] <= entityNum_restoring[entityTypeID]) {
+                    entityNum_restored[entityTypeID]++;
+                } else {
+                    if (currentEntity.getCustomName() == null) currentEntity.remove();
+                }
+            } else if (currentEntity.getType() == EntityType.DROPPED_ITEM) {
+                currentEntity.remove();
+            }
+        }
+
+
+        //restoring missing entities in restored chunk from restoring chunk
+        entityNum_restored = calculateChunkEntityTypesNumber(restored_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+        entityNum_restoring = calculateChunkEntityTypesNumber(restoring_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
+
+        Entity[] entitiesRestoring = restoring_chunk.getEntities();
+        for (int e = 0; e < entitiesRestoring.length; e++) {
+            Entity currentEntity = entitiesRestoring[e];
+            if (isValidRestoredEntityType(currentEntity.getType())) {
+
+                int entityTypeID = convertEntityTypeToIdx(entitiesRestoring[e].getType());
+                if (entityNum_restored[entityTypeID] < entityNum_restoring[entityTypeID]) {
+                    entityNum_restored[entityTypeID]++;
+
+                    Location newLoc = getCorrespondingLocation(restored_chunk.getWorld(), currentEntity.getLocation());
+                    if (RestoreNaturePlugin.Verbosity >= 1)
+                        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + RestoreNaturePlugin.PLUGIN_PREFIX + "restoring entitiy : " + entitiesRestoring[e].getType().name());
+                    restored_chunk.getWorld().spawnEntity(newLoc, entitiesRestoring[e].getType());
+                    restoredEntityNumbers++;
+                }
+            }
+        }
+
+        if (restoring_chunk.isLoaded()) restoring_chunk.unload();
+        if (restored_chunk.isLoaded()) restored_chunk.unload();
+
+        return restoredEntityNumbers;
+
+    }
+
+    public static void restoreChunkForce(Chunk player_chunk, Chunk restoring_chunk, MapChunkInfo chunk_info, int array_x, int array_z) {
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 256; y++) {
+                for (int z = 0; z < 16; z++) {
+                    restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
+                    restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
+                }
+            }
+        }
+        restoreChunkEntity(player_chunk, restoring_chunk);
+
+        if (chunk_info != null) {
+            chunk_info.chunk_untouchedtime[array_x][array_z] = 0;
+        }
+    }
+
+    public static void restoreChunk(Chunk player_chunk, Chunk restoring_chunk, MapChunkInfo chunk_info, int array_x, int array_z) {
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 256; y++) {
+                for (int z = 0; z < 16; z++) {
+                    if (RestoreNaturePlugin.ONLY_RESTORE_AIR) {
+                        if (RestoreNaturePlugin.RegardedAsAirList.contains(player_chunk.getBlock(x, y, z).getType())) {
+                            restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
+                            restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
+                        }
+                    } else {
+                        restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
+                        restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
+
+                    }
+                }
+            }
+        }
+        restoreChunkEntity(player_chunk, restoring_chunk);
+
+        if (chunk_info != null) {
+            chunk_info.chunk_untouchedtime[array_x][array_z] = 0;
+        }
+    }
+
+    private static boolean isValidRemovedEntityType(EntityType e) {
+        return
+                e.equals(EntityType.DROPPED_ITEM) ||
+                        e.equals(EntityType.BLAZE) ||
+                        e.equals(EntityType.CAVE_SPIDER) ||
+                        e.equals(EntityType.CHICKEN) ||
+                        e.equals(EntityType.COW) ||
+                        e.equals(EntityType.DONKEY) ||
+                        e.equals(EntityType.LLAMA) ||
+                        e.equals(EntityType.HORSE) ||
+                        e.equals(EntityType.GUARDIAN) ||
+                        e.equals(EntityType.ELDER_GUARDIAN) ||
+                        e.equals(EntityType.MULE) ||
+                        e.equals(EntityType.MUSHROOM_COW) ||
+                        e.equals(EntityType.OCELOT) ||
+                        e.equals(EntityType.PIG) ||
+                        e.equals(EntityType.PARROT) ||
+                        e.equals(EntityType.POLAR_BEAR) ||
+                        e.equals(EntityType.RABBIT) ||
+                        e.equals(EntityType.SHEEP) ||
+                        e.equals(EntityType.SQUID) ||
+                        e.equals(EntityType.SHULKER) ||
+                        e.equals(EntityType.WOLF) ||
+                        e.equals(EntityType.VILLAGER) ||
+                        e.equals(EntityType.VINDICATOR) ||
+                        e.equals(EntityType.EVOKER) ||
+                        e.equals(EntityType.WITCH);
     }
 
     private static boolean isValidRestoredEntityType(EntityType e) {
@@ -124,89 +260,6 @@ public class RestoreNatureUtil {
                         e.equals(EntityType.WITCH);
     }
 
-    private static Location getCorrespondingLocation(World world, Location eLoc) {
-        return new Location(world, eLoc.getX(), eLoc.getY(), eLoc.getZ());
-    }
-
-    public static int restoreChunkEntity(Chunk restored_chunk, Chunk restoring_chunk) {
-        if (!restoring_chunk.isLoaded()) restoring_chunk.load();
-        if (!restored_chunk.isLoaded()) restored_chunk.load();
-
-        int restoredEntityNumbers = 0;
-        int[] entityNum = calculateChunkEntityTypesNumber(restored_chunk, ENTITY_CAL_RADIUS);
-
-        //restoring missing entities in restored chunk from restoring chunk
-        Entity[] entitiesRestoring = restoring_chunk.getEntities();
-        for (int e = 0; e < entitiesRestoring.length; e++) {
-            Entity currentEntity = entitiesRestoring[e];
-
-            if (isValidRestoredEntityType(currentEntity.getType())) {
-
-                int entityTypeID = convertEntityTypeToIdx(entitiesRestoring[e].getType());
-                if (entityNum[entityTypeID] > 0) {
-                    entityNum[entityTypeID]--;
-                } else {
-                    Location newLoc = getCorrespondingLocation(restored_chunk.getWorld(), currentEntity.getLocation());
-                    if (RestoreNaturePlugin.Verbosity >= 1)
-                        Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + RestoreNaturePlugin.PLUGIN_PREFIX + "restoring entitiy : " + entitiesRestoring[e].getType().name());
-                    restored_chunk.getWorld().spawnEntity(newLoc, entitiesRestoring[e].getType());
-                    restoredEntityNumbers++;
-                }
-
-
-            }
-
-
-        }
-
-        if (restoring_chunk.isLoaded()) restoring_chunk.unload();
-        if (restored_chunk.isLoaded()) restored_chunk.unload();
-
-        return restoredEntityNumbers;
-
-    }
-
-    public static void restoreChunkForce(Chunk player_chunk, Chunk restoring_chunk, MapChunkInfo chunk_info, int array_x, int array_z) {
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 256; y++) {
-                for (int z = 0; z < 16; z++) {
-                    restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
-                    restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
-                }
-            }
-        }
-        restoreChunkEntity(player_chunk, restoring_chunk);
-
-        if (chunk_info != null) {
-            chunk_info.chunk_untouchedtime[array_x][array_z] = 0;
-        }
-    }
-
-    public static void restoreChunk(Chunk player_chunk, Chunk restoring_chunk, MapChunkInfo chunk_info, int array_x, int array_z) {
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 256; y++) {
-                for (int z = 0; z < 16; z++) {
-                    if (RestoreNaturePlugin.ONLY_RESTORE_AIR) {
-                        if (player_chunk.getBlock(x, y, z).getType().equals(Material.AIR)) {
-                            restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
-                            restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
-
-                        }
-                    } else {
-                        restoreChunkBlock(restoring_chunk, player_chunk, x, y, z);
-                        restoreChunkDetails(restoring_chunk, player_chunk, x, y, z);
-
-                    }
-                }
-            }
-        }
-        restoreChunkEntity(player_chunk, restoring_chunk);
-
-        if (chunk_info != null) {
-            chunk_info.chunk_untouchedtime[array_x][array_z] = 0;
-        }
-    }
-
     public static int removeBannedBlockedInChunk(Chunk restored, Chunk restoring) {
         int removedSnow = 0;
         for (int x = 0; x < 16; x++) {
@@ -229,7 +282,6 @@ public class RestoreNatureUtil {
         return removedSnow;
 
     }
-
 
     public static int convertArrayIdxToChunkIdx(int x) {
         int chunk_x = 0;

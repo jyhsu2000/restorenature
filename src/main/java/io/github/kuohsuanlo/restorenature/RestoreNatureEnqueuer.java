@@ -80,7 +80,7 @@ class RestoreNatureEnqueuer implements Runnable {
                 if (!checkLocationClaimed(ChunkMid)) { // Land not claimed
                     if (chunksInfo.chunk_untouchedtime[x][z] >= RestoreNaturePlugin.MAX_SECONDS_UNTOUCHED) {
                         currentChunkReqested++;
-                        if (rsplugin.ChunkTimeTicker.addFullRestoreTask(ChunkMid)) {
+                        if (rsplugin.ChunkDequeuer.addFullRestoreTask(ChunkMid)) {
                             if (RestoreNaturePlugin.Verbosity >= 1)
                                 Bukkit.getServer().getConsoleSender().sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + "addFullRestoreTask : " + ChunkMid.getWorld().getName() + " " +
                                         RestoreNatureUtil.convertArrayIdxToChunkIdx(x) + " " +
@@ -92,7 +92,7 @@ class RestoreNatureEnqueuer implements Runnable {
                         }
                     } else if (chunksInfo.chunk_untouchedtime[x][z] >= RestoreNaturePlugin.MAX_SECONDS_ENTITYRECOVER) {
                         currentEntityRequested++;
-                        if (rsplugin.ChunkTimeTicker.addEntityRestoreTask(ChunkMid)) {
+                        if (rsplugin.ChunkDequeuer.addEntityRestoreTask(ChunkMid)) {
                             if (RestoreNaturePlugin.Verbosity >= 1)
                                 Bukkit.getServer().getConsoleSender().sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + "addEntityRestoreTask : " + ChunkMid.getWorld().getName() + " " +
                                         RestoreNatureUtil.convertArrayIdxToChunkIdx(x) + " " +
@@ -118,29 +118,23 @@ class RestoreNatureEnqueuer implements Runnable {
                         chunksInfo.chunk_untouchedtime[tx][tz] += elapsed;
                     }
                 }
-                int lastFullChunkRestored = rsplugin.ChunkTimeTicker.lastFullChunkRestored;
-                int lastEntityChunkRestored = rsplugin.ChunkTimeTicker.lastEntityChunkRestored;
-                int lastEntityRespawn = rsplugin.ChunkTimeTicker.lastEntityRespawn;
-                int lastBannedBlockRemoved = rsplugin.ChunkTimeTicker.lastBannedBlockRemoved;
-
                 rsplugin.getServer().getConsoleSender().sendMessage(
                         ChatColor.LIGHT_PURPLE + RestoreNaturePlugin.PLUGIN_PREFIX +
                                 "progress: " + chunksInfo.now_min_x + "/" + chunksInfo.max_x + " | " +
                                 "elapsed: " + elapsed + " sec(s)" + " | " +
                                 "Full Enq/Deq: " +
-                                currentChunkReqested + "/" + lastFullChunkRestored + " | " +
+                                currentChunkReqested + "/" + rsplugin.ChunkDequeuer.lastFullChunkRestored + " | " +
                                 "Entity Enq/Deq: " +
-                                currentEntityRequested + "/" + lastEntityChunkRestored + " | " +
-                                "Entity respawned: " + lastEntityRespawn + " | " +
-                                "Block removed: " + lastBannedBlockRemoved
+                                currentEntityRequested + "/" + rsplugin.ChunkDequeuer.lastEntityChunkRestored + " | " +
+                                "Entity respawned: " + rsplugin.ChunkDequeuer.lastEntityRespawn + " | " +
+                                "FullRestoreQueue: " + rsplugin.ChunkDequeuer.FullRestoreQueue.size()
+//                                "Block removed: " + rsplugin.ChunkDequeuer.lastBannedBlockRemoved
                 );
 
-                rsplugin.ChunkTimeTicker.lastFullChunkRestored = 0;
-                rsplugin.ChunkTimeTicker.lastEntityChunkRestored = 0;
-                rsplugin.ChunkTimeTicker.lastEntityRespawn = 0;
-                rsplugin.ChunkTimeTicker.lastBannedBlockRemoved = 0;
                 currentChunkReqested = 0;
                 currentEntityRequested = 0;
+
+                rsplugin.ChunkDequeuer.resetCounter();
 
                 chunksInfo.now_min_z = 0;
                 chunksInfo.now_min_x += 1;
@@ -263,7 +257,6 @@ class RestoreNatureEnqueuer implements Runnable {
                 }
             }
         }
-
 
         return gp_claimed || fc_claimed;
 
