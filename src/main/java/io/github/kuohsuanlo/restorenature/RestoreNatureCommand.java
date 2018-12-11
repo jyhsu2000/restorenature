@@ -98,16 +98,14 @@ public class RestoreNatureCommand implements CommandExecutor {
                             Chunk player_chunk = player.getWorld().getChunkAt(player_location);
                             Chunk restoring_chunk = sender.getServer().getWorld(player_world_name + RestoreNaturePlugin.WORLD_SUFFIX).getChunkAt(player_location);
 
-                            if (!rplugin.ChunkUpdater.checkLocationClaimed(player_location)) { // Land not claimed
+                            if (!rplugin.ChunkEnqueuer.checkLocationClaimed(player_location)) { // Land not claimed
 
                                 for (int i = 0; i < rplugin.maintain_world_chunk_info.size(); i++) {
                                     if (player_world_name.equals(rplugin.maintain_world_chunk_info.get(i).world_name)) {
-                                        MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
                                         if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i))) {
-                                            sender.sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + RestoreNaturePlugin.OUT_OF_BOUND + chunksInfo.chunk_radius * 16);
                                             continue;
                                         }
-
+                                        MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
                                         int x = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getX());
                                         int z = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getZ());
 
@@ -141,16 +139,14 @@ public class RestoreNatureCommand implements CommandExecutor {
 
                             Chunk player_chunk = player.getWorld().getChunkAt(player_location);
 
-                            if (!rplugin.ChunkUpdater.checkLocationClaimed(player_location)) { // Land not claimed
+                            if (!rplugin.ChunkEnqueuer.checkLocationClaimed(player_location)) { // Land not claimed
 
                                 for (int i = 0; i < rplugin.maintain_world_chunk_info.size(); i++) {
                                     if (player_world_name.equals(rplugin.maintain_world_chunk_info.get(i).world_name)) {
-                                        MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
                                         if (!RestoreNatureUtil.isValidLocation(player_chunk, rplugin.maintain_world_chunk_info.get(i))) {
-                                            sender.sendMessage(RestoreNaturePlugin.PLUGIN_PREFIX + RestoreNaturePlugin.OUT_OF_BOUND + chunksInfo.chunk_radius * 16);
                                             continue;
                                         }
-
+                                        MapChunkInfo chunksInfo = rplugin.maintain_world_chunk_info.get(i);
                                         int x = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getX());
                                         int z = RestoreNatureUtil.convertChunkIdxToArrayIdx(player_chunk.getZ());
 

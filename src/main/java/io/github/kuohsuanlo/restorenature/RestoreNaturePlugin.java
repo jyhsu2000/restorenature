@@ -2,7 +2,9 @@ package io.github.kuohsuanlo.restorenature;
 
 
 import io.github.kuohsuanlo.restorenature.util.Lag;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
@@ -15,7 +17,6 @@ import org.json.simple.parser.ParseException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 
 public class RestoreNaturePlugin extends JavaPlugin {
 
@@ -41,11 +42,16 @@ public class RestoreNaturePlugin extends JavaPlugin {
     public static String CLAIMED = "This chunk contains claimed lands!";
     public static String OUT_OF_BOUND = "This chunk is not in maintained radius : ";
 
+    public static String REGARDED_AS_AIR = "AIR,TORCH,WATER,STATIONARY_WATER,LAVA,STATIONARY_LAVA";
+    public static ArrayList<Material> RegardedAsAirList = new ArrayList<Material>();
+
+    public static int ENTITY_CAL_LIMIT = 4;
+    public static int ENTITY_CAL_RADIUS = 1;
 
     public ArrayList<MaintainedWorld> config_maintain_worlds = new ArrayList<MaintainedWorld>();
     public ArrayList<MapChunkInfo> maintain_world_chunk_info = new ArrayList<MapChunkInfo>();
-    public RestoreNatureEnqueuer ChunkUpdater;
-    public RestoreNatureDequeuer ChunkTimeTicker;
+    public RestoreNatureEnqueuer ChunkEnqueuer;
+    public RestoreNatureDequeuer ChunkDequeuer;
     public Lag LagTicker;
     private static int UpdaterId = -1;
     private static int TickerId = -1;
@@ -58,12 +64,12 @@ public class RestoreNaturePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        for (int i = 0; i < ChunkUpdater.maintained_worlds.size(); i++) {
+        for (int i = 0; i < ChunkEnqueuer.maintained_worlds.size(); i++) {
             try {
                 FileOutputStream fos;
-                fos = new FileOutputStream("./plugins/RestoreNature/worlds_chunk_info/" + ChunkUpdater.maintained_worlds.get(i).world_name + ".chunkinfo");
+                fos = new FileOutputStream("./plugins/RestoreNature/worlds_chunk_info/" + ChunkEnqueuer.maintained_worlds.get(i).world_name + ".chunkinfo");
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
-                oos.writeObject(ChunkUpdater.maintained_worlds.get(i));
+                oos.writeObject(ChunkEnqueuer.maintained_worlds.get(i));
                 oos.close();
             } catch (FileNotFoundException e) {
                 // TODO Auto-generated catch block
@@ -111,10 +117,15 @@ public class RestoreNaturePlugin extends JavaPlugin {
         config.addDefault("MAX_SECONDS_UNTOUCHED", MAX_SECONDS_UNTOUCHED);
         config.addDefault("MAX_SECONDS_ENTITYRECOVER", MAX_SECONDS_ENTITYRECOVER);
 
+        config.addDefault("ENTITY_CAL_LIMIT", ENTITY_CAL_LIMIT);
+        config.addDefault("ENTITY_CAL_RADIUS", ENTITY_CAL_RADIUS);
+
         config.addDefault("BLOCK_EVENT_EFFECTING_RADIUS", BLOCK_EVENT_EFFECTING_RADIUS);
         config.addDefault("USING_FEATURE_FACTION", USING_FEATURE_FACTION);
         config.addDefault("USING_FEATURE_GRIEFPREVENTION", USING_FEATURE_GRIEFPREVENTION);
         config.addDefault("ONLY_RESTORE_AIR", ONLY_RESTORE_AIR);
+        config.addDefault("REGARDED_AS_AIR", REGARDED_AS_AIR);
+
         config.addDefault("WORLDS_INFO", DEFAULT_WORLDS_INFO);
         config.options().copyDefaults(true);
         saveConfig();
@@ -138,6 +149,16 @@ public class RestoreNaturePlugin extends JavaPlugin {
         USING_FEATURE_GRIEFPREVENTION = config.getBoolean("USING_FEATURE_GRIEFPREVENTION");
         ONLY_RESTORE_AIR = config.getBoolean("ONLY_RESTORE_AIR");
 
+        ENTITY_CAL_LIMIT = config.getInt("ENTITY_CAL_LIMIT");
+        ENTITY_CAL_RADIUS = config.getInt("ENTITY_CAL_RADIUS");
+
+        RegardedAsAirList = new ArrayList<Material>();
+        String[] REGARDED_AS_AIR_string = config.getString("REGARDED_AS_AIR").split(",");
+        for (int i = 0; i < REGARDED_AS_AIR_string.length; i++) {
+            Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.RED + PLUGIN_PREFIX + "regarded as air - " + REGARDED_AS_AIR_string[i] + " added!");
+            Material m = Material.getMaterial(REGARDED_AS_AIR_string[i]);
+            if (m != null) RegardedAsAirList.add(m);
+        }
 
         JSONParser parser = new JSONParser();
         JSONObject J_maintained_worlds = null;
@@ -238,12 +259,12 @@ public class RestoreNaturePlugin extends JavaPlugin {
 
     private void startUpdaterRoutine() {
         if (UpdaterId >= 0) Bukkit.getServer().getScheduler().cancelTask(UpdaterId);
-        ChunkUpdater = new RestoreNatureEnqueuer(maintain_world_chunk_info, this);
-        UpdaterId = Bukkit.getServer().getScheduler().scheduleAsyncRepeatingTask(this, ChunkUpdater, 0, 1);
+        ChunkEnqueuer = new RestoreNatureEnqueuer(maintain_world_chunk_info, this);
+        UpdaterId = Bukkit.getServer().getScheduler().scheduleAsyncRepeatingTask(this, ChunkEnqueuer, 0, 1);
 
         if (TickerId >= 0) Bukkit.getServer().getScheduler().cancelTask(TickerId);
-        ChunkTimeTicker = new RestoreNatureDequeuer(this);
-        TickerId = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, ChunkTimeTicker, 0, 1);
+        ChunkDequeuer = new RestoreNatureDequeuer(this);
+        TickerId = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, ChunkDequeuer, 0, 1);
 
         if (TpsCounterId >= 0) Bukkit.getServer().getScheduler().cancelTask(TpsCounterId);
         LagTicker = new Lag();
