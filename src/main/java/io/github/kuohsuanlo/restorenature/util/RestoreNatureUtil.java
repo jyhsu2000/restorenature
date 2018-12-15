@@ -8,6 +8,7 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.inventory.ItemStack;
 
 public class RestoreNatureUtil {
@@ -106,16 +107,6 @@ public class RestoreNatureUtil {
         entityNum_restored = calculateChunkEntityTypesNumber(restored_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
         entityNum_restoring = calculateChunkEntityTypesNumber(restoring_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
 
-        for (int i = 0; i < entityNum_restoring.length; i++) {
-            if (entityNum_restoring[i] > RestoreNaturePlugin.ENTITY_CAL_LIMIT) {
-                entityNum_restoring[i] = RestoreNaturePlugin.ENTITY_CAL_LIMIT;
-            }
-        }
-
-        //removing excessive mobs on restored chunk
-        entityNum_restored = calculateChunkEntityTypesNumber(restored_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
-        entityNum_restoring = calculateChunkEntityTypesNumber(restoring_chunk, RestoreNaturePlugin.ENTITY_CAL_RADIUS);
-
         Entity[] entitiesRestored = restored_chunk.getEntities();
         for (int e = 0; e < entitiesRestored.length; e++) {
             Entity currentEntity = entitiesRestored[e];
@@ -162,6 +153,40 @@ public class RestoreNatureUtil {
 
     }
 
+    public static void restoreChunkSpecialEntity(Chunk restored_chunk, Chunk restoring_chunk) {
+        if (!restoring_chunk.isLoaded()) restoring_chunk.load();
+        if (!restored_chunk.isLoaded()) restored_chunk.load();
+
+        //移除舊實體
+        Entity[] entitiesRestored = restored_chunk.getEntities();
+        for (int e = 0; e < entitiesRestored.length; e++) {
+            Entity currentEntity = entitiesRestored[e];
+            if (currentEntity.getType() == EntityType.ITEM_FRAME) {
+                currentEntity.remove();
+            }
+        }
+
+        //建立新實體
+        Entity[] entitiesRestoring = restoring_chunk.getEntities();
+        for (int e = 0; e < entitiesRestoring.length; e++) {
+            Entity currentEntity = entitiesRestoring[e];
+
+            if (currentEntity.getType() == EntityType.ITEM_FRAME) {
+                Location newLoc = getCorrespondingLocation(restored_chunk.getWorld(), currentEntity.getLocation());
+                //FIXME: 修正展示框生成
+                // IllegalArgumentException: Cannot spawn hanging entity for org.bukkit.entity.ItemFrame at Location (no free face)
+                // 物品旋轉角度
+                Entity spawnedEntity = restored_chunk.getWorld().spawnEntity(newLoc, currentEntity.getType());
+                ((ItemFrame) spawnedEntity).setItem(((ItemFrame) currentEntity).getItem(), false);
+                ((ItemFrame) spawnedEntity).setRotation(((ItemFrame) currentEntity).getRotation());
+                ((ItemFrame) spawnedEntity).setFacingDirection(((ItemFrame) currentEntity).getFacing(), true);
+            }
+        }
+
+        if (restoring_chunk.isLoaded()) restoring_chunk.unload();
+        if (restored_chunk.isLoaded()) restored_chunk.unload();
+    }
+
     public static void restoreChunkForce(Chunk player_chunk, Chunk restoring_chunk, MapChunkInfo chunk_info, int array_x, int array_z) {
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 256; y++) {
@@ -171,6 +196,7 @@ public class RestoreNatureUtil {
                 }
             }
         }
+        restoreChunkSpecialEntity(player_chunk, restoring_chunk);
         restoreChunkEntity(player_chunk, restoring_chunk);
 
         if (chunk_info != null) {
@@ -195,6 +221,7 @@ public class RestoreNatureUtil {
                 }
             }
         }
+        restoreChunkSpecialEntity(player_chunk, restoring_chunk);
         restoreChunkEntity(player_chunk, restoring_chunk);
 
         if (chunk_info != null) {
