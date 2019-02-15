@@ -120,14 +120,15 @@ class RestoreNatureEnqueuer implements Runnable {
                 }
                 rsplugin.getServer().getConsoleSender().sendMessage(
                         ChatColor.LIGHT_PURPLE + RestoreNaturePlugin.PLUGIN_PREFIX +
-                                "progress: " + chunksInfo.now_min_x + "/" + chunksInfo.max_x + " | " +
-                                "elapsed: " + elapsed + " sec(s)" + " | " +
+                                "[" + chunksInfo.world_name + "] " +
+                                /* "progress: " + */ chunksInfo.now_min_x + "/" + chunksInfo.max_x + " | " +
+                                /* "elapsed: " + */ elapsed + " sec(s)" + " | " +
                                 "Full Enq/Deq: " +
                                 currentChunkReqested + "/" + rsplugin.ChunkDequeuer.lastFullChunkRestored + " | " +
                                 "Entity Enq/Deq: " +
                                 currentEntityRequested + "/" + rsplugin.ChunkDequeuer.lastEntityChunkRestored + " | " +
-                                "Entity respawned: " + rsplugin.ChunkDequeuer.lastEntityRespawn + " | " +
-                                "FullRestoreQueue: " + rsplugin.ChunkDequeuer.FullRestoreQueue.size()
+                                "Entity respawned: " + rsplugin.ChunkDequeuer.lastEntityRespawn
+//                                "FullRestoreQueue: " + rsplugin.ChunkDequeuer.FullRestoreQueue.size()
 //                                "Block removed: " + rsplugin.ChunkDequeuer.lastBannedBlockRemoved
                 );
 
